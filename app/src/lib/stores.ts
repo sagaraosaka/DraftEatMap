@@ -59,6 +59,15 @@ export async function updateStoreStatus(id: string, status: StoreStatus) {
   if (error) throw new Error(error.message);
 }
 
+export async function updateStore(id: string, patch: { tags: string[]; memo: string }) {
+  const supabase = createClient();
+  const { error } = await supabase
+    .from("stores")
+    .update({ tags: patch.tags, memo: patch.memo || null })
+    .eq("id", id);
+  if (error) throw new Error(error.message);
+}
+
 export async function deleteStore(id: string) {
   const supabase = createClient();
   const { error } = await supabase.from("stores").delete().eq("id", id);
