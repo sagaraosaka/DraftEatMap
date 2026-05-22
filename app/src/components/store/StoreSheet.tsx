@@ -13,19 +13,50 @@ interface StoreSheetProps {
   onDeleted: () => void;
 }
 
+function formatDate(iso: string) {
+  const d = new Date(iso);
+  return `${d.getFullYear()}年${d.getMonth() + 1}月${d.getDate()}日`;
+}
+
+function toDateInput(iso: string | null) {
+  if (!iso) return "";
+  const d = new Date(iso);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
+function StarSelector({ value, onChange }: { value: number | null; onChange: (v: number | null) => void }) {
+  return (
+    <div className="flex gap-1">
+      {[1, 2, 3, 4, 5].map((n) => (
+        <button
+          key={n}
+          type="button"
+          onClick={() => onChange(value === n ? null : n)}
+          className={`text-2xl transition-opacity ${n <= (value ?? 0) ? "opacity-100" : "opacity-25"}`}
+        >
+          ★
+        </button>
+      ))}
+    </div>
+  );
+}
+
 export default function StoreSheet({ store, onClose, onUpdated, onDeleted }: StoreSheetProps) {
   const [busy, setBusy] = useState(false);
   const [current, setCurrent] = useState(store);
   const [editing, setEditing] = useState(false);
   const [editTags, setEditTags] = useState<string[]>(store.tags);
   const [editMemo, setEditMemo] = useState(store.memo ?? "");
+  const [editRating, setEditRating] = useState<number | null>(store.rating);
+  const [editVisitedAt, setEditVisitedAt] = useState(toDateInput(store.visited_at));
 
   const handleToggleStatus = async () => {
     const next = current.status === "visited" ? "unvisited" : "visited";
     setBusy(true);
     try {
       await updateStoreStatus(current.id, next);
-      setCurrent((s) => ({ ...s, status: next }));
+      const now = next === "visited" ? new Date().toISOString() : null;
+      setCurrent((s) => ({ ...s, status: next, visited_at: now }));
       onUpdated();
     } finally {
       setBusy(false);
@@ -34,9 +65,21 @@ export default function StoreSheet({ store, onClose, onUpdated, onDeleted }: Sto
 
   const handleSaveEdit = async () => {
     setBusy(true);
+    const visitedAt = editVisitedAt ? new Date(editVisitedAt).toISOString() : null;
     try {
-      await updateStore(current.id, { tags: editTags, memo: editMemo });
-      setCurrent((s) => ({ ...s, tags: editTags, memo: editMemo || null }));
+      await updateStore(current.id, {
+        tags: editTags,
+        memo: editMemo,
+        rating: editRating,
+        visited_at: visitedAt,
+      });
+      setCurrent((s) => ({
+        ...s,
+        tags: editTags,
+        memo: editMemo || null,
+        rating: editRating,
+        visited_at: visitedAt,
+      }));
       onUpdated();
       setEditing(false);
     } finally {
@@ -78,7 +121,13 @@ export default function StoreSheet({ store, onClose, onUpdated, onDeleted }: Sto
             {!editing && (
               <div className="flex items-center gap-2 shrink-0">
                 <button
-                  onClick={() => { setEditing(true); setEditTags(current.tags); setEditMemo(current.memo ?? ""); }}
+                  onClick={() => {
+                    setEditing(true);
+                    setEditTags(current.tags);
+                    setEditMemo(current.memo ?? "");
+                    setEditRating(current.rating);
+                    setEditVisitedAt(toDateInput(current.visited_at));
+                  }}
                   className="text-[12px] text-eat-text2 border border-eat-border rounded-lg px-2.5 py-1"
                 >
                   編集
@@ -91,6 +140,11 @@ export default function StoreSheet({ store, onClose, onUpdated, onDeleted }: Sto
           {editing ? (
             /* ── 編集モード ── */
             <>
+              <div>
+                <p className="mb-2 text-[12px] font-medium text-eat-text2">評価</p>
+                <StarSelector value={editRating} onChange={setEditRating} />
+              </div>
+
               <div>
                 <p className="mb-2 text-[12px] font-medium text-eat-text2">タグ</p>
                 <div className="flex flex-wrap gap-2">
@@ -121,6 +175,40 @@ export default function StoreSheet({ store, onClose, onUpdated, onDeleted }: Sto
                 />
               </div>
 
+              <div>
+                <p className="mb-2 text-[12px] font-medium text-eat-text2">訪問日</p>
+                <div className="flex gap-2 mb-2">
+                  {[
+                    { label: "今日", offset: 0 },
+                    { label: "昨日", offset: -1 },
+                  ].map(({ label, offset }) => {
+                    const d = new Date();
+                    d.setDate(d.getDate() + offset);
+                    const val = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+                    return (
+                      <button
+                        key={label}
+                        type="button"
+                        onClick={() => setEditVisitedAt(val)}
+                        className={`rounded-full border px-3 py-1 text-[12px] transition-colors ${
+                          editVisitedAt === val
+                            ? "border-eat-accent bg-eat-accent/10 text-eat-accent"
+                            : "border-eat-border bg-eat-surface text-eat-text2"
+                        }`}
+                      >
+                        {label}
+                      </button>
+                    );
+                  })}
+                </div>
+                <input
+                  type="date"
+                  value={editVisitedAt}
+                  onChange={(e) => setEditVisitedAt(e.target.value)}
+                  className="w-full rounded-lg border border-eat-border bg-eat-surface px-3 py-2.5 text-[13px] text-eat-text outline-none focus:border-eat-accent"
+                />
+              </div>
+
               <div className="flex gap-2">
                 <button
                   onClick={() => setEditing(false)}
@@ -140,6 +228,16 @@ export default function StoreSheet({ store, onClose, onUpdated, onDeleted }: Sto
           ) : (
             /* ── 表示モード ── */
             <>
+              {current.rating && (
+                <div className="flex items-center gap-0.5">
+                  {[1, 2, 3, 4, 5].map((n) => (
+                    <span key={n} className={`text-xl ${n <= current.rating! ? "text-eat-accent" : "text-eat-border"}`}>
+                      ★
+                    </span>
+                  ))}
+                </div>
+              )}
+
               {current.tags.length > 0 && (
                 <div className="flex flex-wrap gap-1.5">
                   {current.tags.map((tag) => (
@@ -158,6 +256,12 @@ export default function StoreSheet({ store, onClose, onUpdated, onDeleted }: Sto
                   <p className="text-[11px] font-medium text-eat-text2 mb-1">メモ</p>
                   <p className="text-[13px] text-eat-text whitespace-pre-wrap">{current.memo}</p>
                 </div>
+              )}
+
+              {current.visited_at && (
+                <p className="text-[12px] text-eat-text3">
+                  📅 訪問日: {formatDate(current.visited_at)}
+                </p>
               )}
 
               <div className="flex flex-col gap-2 mt-1">
