@@ -13,6 +13,15 @@ export async function signInWithMagicLink(email: string) {
   if (error) throw error;
 }
 
+export async function signInWithGoogle() {
+  const supabase = createClient();
+  const { error } = await supabase.auth.signInWithOAuth({
+    provider: "google",
+    options: { redirectTo: `${location.origin}/auth/callback` },
+  });
+  if (error) throw error;
+}
+
 export async function signOut() {
   const supabase = createClient();
   const { error } = await supabase.auth.signOut();
