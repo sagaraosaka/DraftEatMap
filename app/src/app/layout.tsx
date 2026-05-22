@@ -12,6 +12,14 @@ export const metadata: Metadata = {
   title: "DraftEatMap",
   description: "行きたい飲食店を保存・管理するパーソナルマップ",
   manifest: "/manifest.json",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "EatMap",
+  },
+  icons: {
+    apple: "/apple-touch-icon.png",
+  },
 };
 
 export const viewport: Viewport = {
