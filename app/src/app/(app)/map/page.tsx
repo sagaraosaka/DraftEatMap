@@ -100,9 +100,21 @@ export default function MapPage() {
       <button
         onClick={handleLocate}
         disabled={locating}
-        className="absolute bottom-6 right-4 z-10 flex h-11 w-11 items-center justify-center rounded-full bg-eat-bg shadow-lg border border-eat-border text-lg disabled:opacity-50"
+        className="absolute bottom-6 right-4 z-10 flex h-12 w-12 items-center justify-center rounded-full bg-white shadow-md border border-eat-border disabled:opacity-40 active:scale-95 transition-transform"
       >
-        {locating ? "⏳" : "📍"}
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          viewBox="0 0 24 24"
+          fill="none"
+          strokeWidth={2}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          className={`h-5 w-5 ${locating ? "stroke-eat-text3 animate-pulse" : "stroke-eat-accent"}`}
+        >
+          <circle cx="12" cy="12" r="3" />
+          <path d="M12 2v3M12 19v3M2 12h3M19 12h3" />
+          <path d="M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8z" strokeOpacity="0.2" fill="currentColor" className="fill-eat-accent/10" />
+        </svg>
       </button>
 
       {selected && (
