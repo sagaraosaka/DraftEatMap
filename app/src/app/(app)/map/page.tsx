@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { GoogleMap, Marker } from "@react-google-maps/api";
 import { useMapsLoaded } from "@/components/layout/MapsProvider";
 import StoreSheet from "@/components/store/StoreSheet";
@@ -32,6 +32,8 @@ export default function MapPage() {
   const isLoaded = useMapsLoaded();
   const [stores, setStores] = useState<Store[]>([]);
   const [selected, setSelected] = useState<Store | null>(null);
+  const [locating, setLocating] = useState(false);
+  const mapRef = useRef<google.maps.Map | null>(null);
 
   function loadStores() {
     getStores().then(setStores).catch(() => {});
@@ -41,8 +43,23 @@ export default function MapPage() {
     loadStores();
   }, []);
 
+  const handleLocate = () => {
+    if (!navigator.geolocation) return;
+    setLocating(true);
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        mapRef.current?.panTo({ lat: pos.coords.latitude, lng: pos.coords.longitude });
+        mapRef.current?.setZoom(16);
+        setLocating(false);
+      },
+      () => setLocating(false),
+      { timeout: 8000 }
+    );
+  };
+
   const onLoad = useCallback(
     (map: google.maps.Map) => {
+      mapRef.current = map;
       if (stores.length > 0) {
         const bounds = new google.maps.LatLngBounds();
         stores.forEach((s) => bounds.extend({ lat: s.lat, lng: s.lng }));
@@ -67,7 +84,7 @@ export default function MapPage() {
         center={DEFAULT_CENTER}
         zoom={DEFAULT_ZOOM}
         options={MAP_OPTIONS}
-        onLoad={stores.length > 0 ? onLoad : undefined}
+        onLoad={onLoad}
       >
         {stores.map((store) => (
           <Marker
@@ -78,6 +95,15 @@ export default function MapPage() {
           />
         ))}
       </GoogleMap>
+
+      {/* 現在地ボタン */}
+      <button
+        onClick={handleLocate}
+        disabled={locating}
+        className="absolute bottom-6 right-4 z-10 flex h-11 w-11 items-center justify-center rounded-full bg-eat-bg shadow-lg border border-eat-border text-lg disabled:opacity-50"
+      >
+        {locating ? "⏳" : "📍"}
+      </button>
 
       {selected && (
         <StoreSheet
