@@ -2,7 +2,13 @@
 
 import { useEffect, useMemo, useState } from "react";
 import AppHeader from "@/components/layout/AppHeader";
+
+function extractArea(address: string): string {
+  const m = address.match(/([^\s都道府県]+[市区町村])/);
+  return m ? m[1] : "";
+}
 import FilterChips, { type FilterValue } from "@/components/list/FilterChips";
+import Chip from "@/components/ui/Chip";
 import StoreRow from "@/components/list/StoreRow";
 import AddStore from "@/components/store/AddStore";
 import StoreSheet from "@/components/store/StoreSheet";
@@ -14,6 +20,7 @@ export default function ListPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [filter, setFilter] = useState<FilterValue>("all");
+  const [areaFilter, setAreaFilter] = useState("all");
   const [query, setQuery] = useState("");
   const [showAdd, setShowAdd] = useState(false);
   const [selectedStore, setSelectedStore] = useState<Store | null>(null);
@@ -35,8 +42,18 @@ export default function ListPage() {
     return [...set];
   }, [stores]);
 
+  const areas = useMemo(() => {
+    const set = new Set<string>();
+    stores.forEach((s) => {
+      const a = extractArea(s.address);
+      if (a) set.add(a);
+    });
+    return [...set];
+  }, [stores]);
+
   const filtered = useMemo(() => {
     return stores.filter((s) => {
+      if (areaFilter !== "all" && extractArea(s.address) !== areaFilter) return false;
       if (filter === "unvisited" && s.status !== "unvisited") return false;
       if (filter === "visited"   && s.status !== "visited")   return false;
       if (filter !== "all" && filter !== "unvisited" && filter !== "visited") {
@@ -45,7 +62,7 @@ export default function ListPage() {
       if (query && !s.name.includes(query) && !s.address.includes(query)) return false;
       return true;
     });
-  }, [stores, filter, query]);
+  }, [stores, filter, areaFilter, query]);
 
   return (
     <>
@@ -77,6 +94,25 @@ export default function ListPage() {
 
       {/* フィルターチップ */}
       <FilterChips active={filter} tags={allTags} onChange={setFilter} />
+
+      {/* エリアフィルター */}
+      {areas.length >= 2 && (
+        <div className="flex gap-1.5 overflow-x-auto px-4 pb-2 scrollbar-none">
+          <Chip
+            label="📍 全エリア"
+            active={areaFilter === "all"}
+            onClick={() => setAreaFilter("all")}
+          />
+          {areas.map((area) => (
+            <Chip
+              key={area}
+              label={area}
+              active={areaFilter === area}
+              onClick={() => setAreaFilter(area)}
+            />
+          ))}
+        </div>
+      )}
 
       {/* リスト */}
       <div className="flex-1 overflow-y-auto px-2">
