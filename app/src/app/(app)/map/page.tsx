@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback, useRef } from "react";
 import { GoogleMap, Marker } from "@react-google-maps/api";
 import { useMapsLoaded } from "@/components/layout/MapsProvider";
+import AppHeader from "@/components/layout/AppHeader";
 import StoreSheet from "@/components/store/StoreSheet";
 import { getStores } from "@/lib/stores";
 import { DEFAULT_CENTER, DEFAULT_ZOOM, MAP_OPTIONS } from "@/lib/maps";
@@ -78,7 +79,9 @@ export default function MapPage() {
   }
 
   return (
-    <div className="relative h-full">
+    <div className="relative flex h-full flex-col">
+      <AppHeader />
+      <div className="relative flex-1">
       <GoogleMap
         mapContainerStyle={{ width: "100%", height: "100%" }}
         center={DEFAULT_CENTER}
@@ -128,6 +131,7 @@ export default function MapPage() {
           }}
         />
       )}
+      </div>
     </div>
   );
 }
