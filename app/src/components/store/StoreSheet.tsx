@@ -18,21 +18,38 @@ function formatDate(iso: string) {
   return `${d.getFullYear()}年${d.getMonth() + 1}月${d.getDate()}日`;
 }
 
-function toDateInput(iso: string | null) {
+function localDateStr(offsetDays = 0) {
+  const d = new Date();
+  d.setDate(d.getDate() + offsetDays);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
+function isoToDateInput(iso: string | null) {
   if (!iso) return "";
   const d = new Date(iso);
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 }
 
-function StarSelector({ value, onChange }: { value: number | null; onChange: (v: number | null) => void }) {
+function StarSelector({
+  value,
+  onChange,
+  disabled,
+}: {
+  value: number | null;
+  onChange: (v: number | null) => void;
+  disabled?: boolean;
+}) {
   return (
     <div className="flex gap-1">
       {[1, 2, 3, 4, 5].map((n) => (
         <button
           key={n}
           type="button"
+          disabled={disabled}
           onClick={() => onChange(value === n ? null : n)}
-          className={`text-2xl transition-opacity ${n <= (value ?? 0) ? "opacity-100" : "opacity-25"}`}
+          className={`text-2xl transition-opacity disabled:opacity-40 ${
+            n <= (value ?? 0) ? "text-eat-accent" : "text-eat-border"
+          }`}
         >
           ★
         </button>
@@ -43,20 +60,45 @@ function StarSelector({ value, onChange }: { value: number | null; onChange: (v:
 
 export default function StoreSheet({ store, onClose, onUpdated, onDeleted }: StoreSheetProps) {
   const [busy, setBusy] = useState(false);
+  const [savingInline, setSavingInline] = useState(false);
   const [current, setCurrent] = useState(store);
   const [editing, setEditing] = useState(false);
   const [editTags, setEditTags] = useState<string[]>(store.tags);
-  const [editMemo, setEditMemo] = useState(store.memo ?? "");
-  const [editRating, setEditRating] = useState<number | null>(store.rating);
-  const [editVisitedAt, setEditVisitedAt] = useState(toDateInput(store.visited_at));
+  const [memoValue, setMemoValue] = useState(store.memo ?? "");
+
+  const handleInlineUpdate = async (
+    patch: Partial<Pick<Store, "rating" | "visited_at" | "memo">>
+  ) => {
+    setSavingInline(true);
+    const next = { ...current, ...patch };
+    try {
+      await updateStore(current.id, {
+        tags: next.tags,
+        memo: next.memo ?? "",
+        rating: next.rating,
+        visited_at: next.visited_at,
+      });
+      setCurrent(next);
+      onUpdated();
+    } finally {
+      setSavingInline(false);
+    }
+  };
+
+  const handleMemoBlur = () => {
+    const trimmed = memoValue.trim();
+    if (trimmed !== (current.memo ?? "")) {
+      handleInlineUpdate({ memo: trimmed || null });
+    }
+  };
 
   const handleToggleStatus = async () => {
-    const next = current.status === "visited" ? "unvisited" : "visited";
+    const nextStatus = current.status === "visited" ? "unvisited" : "visited";
     setBusy(true);
     try {
-      await updateStoreStatus(current.id, next);
-      const now = next === "visited" ? new Date().toISOString() : null;
-      setCurrent((s) => ({ ...s, status: next, visited_at: now }));
+      await updateStoreStatus(current.id, nextStatus);
+      const visited_at = nextStatus === "visited" ? new Date().toISOString() : null;
+      setCurrent((s) => ({ ...s, status: nextStatus, visited_at }));
       onUpdated();
     } finally {
       setBusy(false);
@@ -65,21 +107,14 @@ export default function StoreSheet({ store, onClose, onUpdated, onDeleted }: Sto
 
   const handleSaveEdit = async () => {
     setBusy(true);
-    const visitedAt = editVisitedAt ? new Date(editVisitedAt).toISOString() : null;
     try {
       await updateStore(current.id, {
         tags: editTags,
-        memo: editMemo,
-        rating: editRating,
-        visited_at: visitedAt,
+        memo: current.memo ?? "",
+        rating: current.rating,
+        visited_at: current.visited_at,
       });
-      setCurrent((s) => ({
-        ...s,
-        tags: editTags,
-        memo: editMemo || null,
-        rating: editRating,
-        visited_at: visitedAt,
-      }));
+      setCurrent((s) => ({ ...s, tags: editTags }));
       onUpdated();
       setEditing(false);
     } finally {
@@ -100,7 +135,9 @@ export default function StoreSheet({ store, onClose, onUpdated, onDeleted }: Sto
   };
 
   const toggleEditTag = (tag: string) =>
-    setEditTags((prev) => prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag]);
+    setEditTags((prev) =>
+      prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag]
+    );
 
   return (
     <div className="fixed inset-0 z-50 flex flex-col justify-end">
@@ -121,13 +158,7 @@ export default function StoreSheet({ store, onClose, onUpdated, onDeleted }: Sto
             {!editing && (
               <div className="flex items-center gap-2 shrink-0">
                 <button
-                  onClick={() => {
-                    setEditing(true);
-                    setEditTags(current.tags);
-                    setEditMemo(current.memo ?? "");
-                    setEditRating(current.rating);
-                    setEditVisitedAt(toDateInput(current.visited_at));
-                  }}
+                  onClick={() => { setEditing(true); setEditTags(current.tags); }}
                   className="text-[12px] text-eat-text2 border border-eat-border rounded-lg px-2.5 py-1"
                 >
                   編集
@@ -138,13 +169,8 @@ export default function StoreSheet({ store, onClose, onUpdated, onDeleted }: Sto
           </div>
 
           {editing ? (
-            /* ── 編集モード ── */
+            /* ── 編集モード: タグのみ ── */
             <>
-              <div>
-                <p className="mb-2 text-[12px] font-medium text-eat-text2">評価</p>
-                <StarSelector value={editRating} onChange={setEditRating} />
-              </div>
-
               <div>
                 <p className="mb-2 text-[12px] font-medium text-eat-text2">タグ</p>
                 <div className="flex flex-wrap gap-2">
@@ -162,51 +188,6 @@ export default function StoreSheet({ store, onClose, onUpdated, onDeleted }: Sto
                     </button>
                   ))}
                 </div>
-              </div>
-
-              <div>
-                <p className="mb-2 text-[12px] font-medium text-eat-text2">メモ</p>
-                <textarea
-                  value={editMemo}
-                  onChange={(e) => setEditMemo(e.target.value)}
-                  placeholder="気になる点・おすすめメニューなど..."
-                  rows={3}
-                  className="w-full rounded-lg border border-eat-border bg-eat-surface px-3 py-2.5 text-[13px] text-eat-text placeholder:text-eat-text3 outline-none resize-none focus:border-eat-accent"
-                />
-              </div>
-
-              <div>
-                <p className="mb-2 text-[12px] font-medium text-eat-text2">訪問日</p>
-                <div className="flex gap-2 mb-2">
-                  {[
-                    { label: "今日", offset: 0 },
-                    { label: "昨日", offset: -1 },
-                  ].map(({ label, offset }) => {
-                    const d = new Date();
-                    d.setDate(d.getDate() + offset);
-                    const val = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-                    return (
-                      <button
-                        key={label}
-                        type="button"
-                        onClick={() => setEditVisitedAt(val)}
-                        className={`rounded-full border px-3 py-1 text-[12px] transition-colors ${
-                          editVisitedAt === val
-                            ? "border-eat-accent bg-eat-accent/10 text-eat-accent"
-                            : "border-eat-border bg-eat-surface text-eat-text2"
-                        }`}
-                      >
-                        {label}
-                      </button>
-                    );
-                  })}
-                </div>
-                <input
-                  type="date"
-                  value={editVisitedAt}
-                  onChange={(e) => setEditVisitedAt(e.target.value)}
-                  className="w-full rounded-lg border border-eat-border bg-eat-surface px-3 py-2.5 text-[13px] text-eat-text outline-none focus:border-eat-accent"
-                />
               </div>
 
               <div className="flex gap-2">
@@ -228,16 +209,14 @@ export default function StoreSheet({ store, onClose, onUpdated, onDeleted }: Sto
           ) : (
             /* ── 表示モード ── */
             <>
-              {current.rating && (
-                <div className="flex items-center gap-0.5">
-                  {[1, 2, 3, 4, 5].map((n) => (
-                    <span key={n} className={`text-xl ${n <= current.rating! ? "text-eat-accent" : "text-eat-border"}`}>
-                      ★
-                    </span>
-                  ))}
-                </div>
-              )}
+              {/* 星評価: 即時保存 */}
+              <StarSelector
+                value={current.rating}
+                onChange={(rating) => handleInlineUpdate({ rating })}
+                disabled={savingInline}
+              />
 
+              {/* タグ */}
               {current.tags.length > 0 && (
                 <div className="flex flex-wrap gap-1.5">
                   {current.tags.map((tag) => (
@@ -251,18 +230,61 @@ export default function StoreSheet({ store, onClose, onUpdated, onDeleted }: Sto
                 </div>
               )}
 
-              {current.memo && (
-                <div className="rounded-xl border border-eat-border bg-eat-surface px-3 py-2.5">
-                  <p className="text-[11px] font-medium text-eat-text2 mb-1">メモ</p>
-                  <p className="text-[13px] text-eat-text whitespace-pre-wrap">{current.memo}</p>
-                </div>
-              )}
+              {/* メモ: インライン編集、blur時に自動保存 */}
+              <div className="rounded-xl border border-eat-border bg-eat-surface px-3 py-2.5 focus-within:border-eat-accent transition-colors">
+                <p className="text-[11px] font-medium text-eat-text2 mb-1">メモ</p>
+                <textarea
+                  value={memoValue}
+                  onChange={(e) => setMemoValue(e.target.value)}
+                  onBlur={handleMemoBlur}
+                  placeholder="気になる点・おすすめメニューなど..."
+                  rows={3}
+                  className="w-full bg-transparent text-[13px] text-eat-text placeholder:text-eat-text3 outline-none resize-none"
+                />
+              </div>
 
-              {current.visited_at && (
-                <p className="text-[12px] text-eat-text3">
-                  📅 訪問日: {formatDate(current.visited_at)}
+              {/* 訪問日: 常に表示、即時保存 */}
+              <div>
+                <p className="mb-2 text-[12px] font-medium text-eat-text2">
+                  📅 訪問日{current.visited_at ? `：${formatDate(current.visited_at)}` : ""}
                 </p>
-              )}
+                <div className="flex gap-2 mb-2">
+                  {[
+                    { label: "今日", offset: 0 },
+                    { label: "昨日", offset: -1 },
+                  ].map(({ label, offset }) => {
+                    const val = localDateStr(offset);
+                    const isActive = current.visited_at
+                      ? isoToDateInput(current.visited_at) === val
+                      : offset === 0;
+                    return (
+                      <button
+                        key={label}
+                        type="button"
+                        disabled={savingInline}
+                        onClick={() => handleInlineUpdate({ visited_at: new Date(val).toISOString() })}
+                        className={`rounded-full border px-3 py-1 text-[12px] transition-colors disabled:opacity-40 ${
+                          isActive
+                            ? "border-eat-accent bg-eat-accent/10 text-eat-accent"
+                            : "border-eat-border bg-eat-surface text-eat-text2"
+                        }`}
+                      >
+                        {label}
+                      </button>
+                    );
+                  })}
+                </div>
+                <input
+                  type="date"
+                  value={isoToDateInput(current.visited_at) || localDateStr(0)}
+                  disabled={savingInline}
+                  onChange={(e) =>
+                    e.target.value &&
+                    handleInlineUpdate({ visited_at: new Date(e.target.value).toISOString() })
+                  }
+                  className="w-full rounded-lg border border-eat-border bg-eat-surface px-3 py-2.5 text-[13px] text-eat-text outline-none focus:border-eat-accent disabled:opacity-40"
+                />
+              </div>
 
               <div className="flex flex-col gap-2 mt-1">
                 <button
