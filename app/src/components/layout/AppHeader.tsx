@@ -3,7 +3,7 @@ interface AppHeaderProps {
   right?: React.ReactNode;
 }
 
-export default function AppHeader({ title = "DraftEatMap", right }: AppHeaderProps) {
+export default function AppHeader({ title = "食べイコ", right }: AppHeaderProps) {
   return (
     <header className="flex items-center justify-between px-4 py-2">
       <div className="flex items-center gap-2">

@@ -9,13 +9,13 @@ const notoSansJP = Noto_Sans_JP({
 });
 
 export const metadata: Metadata = {
-  title: "DraftEatMap",
+  title: "食べイコ",
   description: "行きたい飲食店を保存・管理するパーソナルマップ",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
-    title: "EatMap",
+    title: "食べイコ",
   },
   icons: {
     apple: "/apple-touch-icon.png",

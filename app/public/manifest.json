@@ -1,6 +1,6 @@
 {
-  "name": "DraftEatMap",
-  "short_name": "EatMap",
+  "name": "食べイコ",
+  "short_name": "食べイコ",
   "description": "行きたいお店を地図で管理",
   "start_url": "/map",
   "display": "standalone",

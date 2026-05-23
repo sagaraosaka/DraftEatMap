@@ -103,7 +103,7 @@ export default function SettingsPage() {
         </div>
 
         <p className="text-center font-mono text-[11px] text-eat-text3">
-          ver 1.0.0 · DraftEatMap
+          ver 1.0.0 · 食べイコ
         </p>
       </div>
     </div>

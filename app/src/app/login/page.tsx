@@ -35,7 +35,7 @@ export default function LoginPage() {
             <span className="inline-block h-3 w-3 rounded-full bg-eat-accent" />
           </div>
           <h1 className="text-xl font-bold tracking-tight text-eat-text">
-            DraftEatMap
+            食べイコ
           </h1>
           <p className="mt-1.5 text-sm text-eat-text3">
             行きたい店を保存・管理する
