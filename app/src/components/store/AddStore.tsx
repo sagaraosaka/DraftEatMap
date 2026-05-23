@@ -8,9 +8,10 @@ import { PRESET_TAGS } from "@/types/store";
 interface AddStoreProps {
   onClose: () => void;
   onSaved: () => void;
+  initialQuery?: string;
 }
 
-export default function AddStore({ onClose, onSaved }: AddStoreProps) {
+export default function AddStore({ onClose, onSaved, initialQuery }: AddStoreProps) {
   const isLoaded = useMapsLoaded();
 
   if (!isLoaded) {
@@ -25,7 +26,7 @@ export default function AddStore({ onClose, onSaved }: AddStoreProps) {
 
   return (
     <Overlay onClose={onClose}>
-      <Inner onClose={onClose} onSaved={onSaved} />
+      <AddStoreForm onClose={onClose} onSaved={onSaved} initialQuery={initialQuery} />
     </Overlay>
   );
 }
@@ -50,14 +51,14 @@ interface Suggestion {
   secondaryText: string;
 }
 
-function Inner({ onClose, onSaved }: { onClose: () => void; onSaved: () => void }) {
+export function AddStoreForm({ onClose, onSaved, initialQuery }: { onClose: () => void; onSaved: () => void; initialQuery?: string }) {
   const [selected, setSelected] = useState<PlaceData | null>(null);
   const [tags, setTags] = useState<string[]>([]);
   const [memo, setMemo] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const [query, setQuery] = useState("");
+  const [query, setQuery] = useState(initialQuery ?? "");
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
