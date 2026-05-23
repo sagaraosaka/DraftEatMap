@@ -34,6 +34,7 @@ export default function MapPage() {
   const [stores, setStores] = useState<Store[]>([]);
   const [selected, setSelected] = useState<Store | null>(null);
   const [locating, setLocating] = useState(false);
+  const [locateError, setLocateError] = useState(false);
   const mapRef = useRef<google.maps.Map | null>(null);
 
   function loadStores() {
@@ -47,14 +48,15 @@ export default function MapPage() {
   const handleLocate = () => {
     if (!navigator.geolocation) return;
     setLocating(true);
+    setLocateError(false);
     navigator.geolocation.getCurrentPosition(
       (pos) => {
         mapRef.current?.panTo({ lat: pos.coords.latitude, lng: pos.coords.longitude });
         mapRef.current?.setZoom(16);
         setLocating(false);
       },
-      (err) => {
-        alert(`位置情報エラー: code=${err.code} ${err.message}`);
+      () => {
+        setLocateError(true);
         setLocating(false);
       },
       { timeout: 8000 }
@@ -101,6 +103,14 @@ export default function MapPage() {
           />
         ))}
       </GoogleMap>
+
+      {/* 現在地エラー */}
+      {locateError && (
+        <div className="absolute bottom-20 right-4 z-10 max-w-[220px] rounded-xl bg-white px-3 py-2 shadow-md border border-eat-border text-[11px] text-eat-text2 leading-snug">
+          位置情報が許可されていません。<br />
+          設定 → プライバシー → 位置情報サービス → Safariウェブサイト を「許可」にしてください。
+        </div>
+      )}
 
       {/* 現在地ボタン */}
       <button
