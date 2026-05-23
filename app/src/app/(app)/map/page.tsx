@@ -53,7 +53,10 @@ export default function MapPage() {
         mapRef.current?.setZoom(16);
         setLocating(false);
       },
-      () => setLocating(false),
+      (err) => {
+        alert(`位置情報エラー: code=${err.code} ${err.message}`);
+        setLocating(false);
+      },
       { timeout: 8000 }
     );
   };
