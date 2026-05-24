@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Badge from "@/components/ui/Badge";
+import Toast from "@/components/ui/Toast";
 import { updateStoreStatus, updateStore, deleteStore } from "@/lib/stores";
 import { PRESET_TAGS } from "@/types/store";
 import type { Store } from "@/types/store";
@@ -59,12 +60,25 @@ function StarSelector({
 }
 
 export default function StoreSheet({ store, onClose, onUpdated, onDeleted }: StoreSheetProps) {
+  const [visible, setVisible] = useState(false);
   const [busy, setBusy] = useState(false);
   const [savingInline, setSavingInline] = useState(false);
   const [current, setCurrent] = useState(store);
   const [editing, setEditing] = useState(false);
   const [editTags, setEditTags] = useState<string[]>(store.tags);
   const [memoValue, setMemoValue] = useState(store.memo ?? "");
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [toast, setToast] = useState<string | null>(null);
+
+  useEffect(() => {
+    const id = requestAnimationFrame(() => setVisible(true));
+    return () => cancelAnimationFrame(id);
+  }, []);
+
+  const closeSheet = (callback?: () => void) => {
+    setVisible(false);
+    setTimeout(() => (callback ?? onClose)(), 280);
+  };
 
   const handleInlineUpdate = async (
     patch: Partial<Pick<Store, "rating" | "visited_at" | "memo">>
@@ -79,6 +93,7 @@ export default function StoreSheet({ store, onClose, onUpdated, onDeleted }: Sto
         visited_at: next.visited_at,
       });
       setCurrent(next);
+      setToast("保存しました ✓");
       onUpdated();
     } finally {
       setSavingInline(false);
@@ -123,14 +138,13 @@ export default function StoreSheet({ store, onClose, onUpdated, onDeleted }: Sto
   };
 
   const handleDelete = async () => {
-    const ok = window.confirm(`「${current.name}」を削除しますか？`);
-    if (!ok) return;
     setBusy(true);
     try {
       await deleteStore(current.id);
-      onDeleted();
-    } finally {
+      closeSheet(onDeleted);
+    } catch {
       setBusy(false);
+      setConfirmDelete(false);
     }
   };
 
@@ -141,8 +155,13 @@ export default function StoreSheet({ store, onClose, onUpdated, onDeleted }: Sto
 
   return (
     <div className="fixed inset-0 z-50 flex flex-col justify-end">
-      <div className="absolute inset-0 bg-black/40" onClick={editing ? undefined : onClose} />
-      <div className="relative z-10 flex max-h-[85svh] flex-col rounded-t-2xl bg-eat-bg shadow-xl">
+      <div
+        className={`absolute inset-0 bg-black/40 transition-opacity duration-300 ${visible ? "opacity-100" : "opacity-0"}`}
+        onClick={editing ? undefined : () => closeSheet()}
+      />
+      <div
+        className={`relative z-10 flex max-h-[85svh] flex-col rounded-t-2xl bg-eat-bg shadow-xl transition-transform duration-300 ease-out ${visible ? "translate-y-0" : "translate-y-full"}`}
+      >
         {/* Handle */}
         <div className="flex justify-center pt-3 pb-2">
           <div className="h-1 w-10 rounded-full bg-eat-border" />
@@ -299,18 +318,44 @@ export default function StoreSheet({ store, onClose, onUpdated, onDeleted }: Sto
                   {current.status === "visited" ? "未訪問に戻す" : "✓ 行った！"}
                 </button>
 
-                <button
-                  onClick={handleDelete}
-                  disabled={busy}
-                  className="w-full rounded-xl border border-eat-red/30 bg-eat-red/5 py-3 text-[14px] font-semibold text-eat-red transition-opacity disabled:opacity-50"
-                >
-                  削除
-                </button>
+                {confirmDelete ? (
+                  <div className="rounded-xl border border-eat-red/30 bg-eat-red/5 px-4 py-3">
+                    <p className="text-[13px] font-medium text-eat-text mb-3">
+                      「{current.name}」を削除しますか？
+                    </p>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => setConfirmDelete(false)}
+                        disabled={busy}
+                        className="flex-1 rounded-xl border border-eat-border py-2.5 text-[13px] text-eat-text2 disabled:opacity-50"
+                      >
+                        キャンセル
+                      </button>
+                      <button
+                        onClick={handleDelete}
+                        disabled={busy}
+                        className="flex-1 rounded-xl bg-eat-red py-2.5 text-[13px] font-semibold text-white disabled:opacity-50"
+                      >
+                        {busy ? "削除中..." : "削除する"}
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => setConfirmDelete(true)}
+                    disabled={busy}
+                    className="w-full rounded-xl border border-eat-red/30 bg-eat-red/5 py-3 text-[14px] font-semibold text-eat-red transition-opacity disabled:opacity-50"
+                  >
+                    削除
+                  </button>
+                )}
               </div>
             </>
           )}
         </div>
       </div>
+
+      {toast && <Toast message={toast} onDone={() => setToast(null)} />}
     </div>
   );
 }

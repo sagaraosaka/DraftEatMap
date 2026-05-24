@@ -13,33 +13,37 @@ interface AddStoreProps {
 
 export default function AddStore({ onClose, onSaved, initialQuery }: AddStoreProps) {
   const isLoaded = useMapsLoaded();
+  const [visible, setVisible] = useState(false);
 
-  if (!isLoaded) {
-    return (
-      <Overlay onClose={onClose}>
-        <div className="flex h-32 items-center justify-center">
-          <p className="text-sm text-eat-text3">読み込み中...</p>
-        </div>
-      </Overlay>
-    );
-  }
+  useEffect(() => {
+    const id = requestAnimationFrame(() => setVisible(true));
+    return () => cancelAnimationFrame(id);
+  }, []);
 
-  return (
-    <Overlay onClose={onClose}>
-      <AddStoreForm onClose={onClose} onSaved={onSaved} initialQuery={initialQuery} />
-    </Overlay>
-  );
-}
+  const handleClose = () => {
+    setVisible(false);
+    setTimeout(onClose, 280);
+  };
 
-function Overlay({ children, onClose }: { children: React.ReactNode; onClose: () => void }) {
   return (
     <div className="fixed inset-0 z-50 flex flex-col justify-end">
-      <div className="absolute inset-0 bg-black/40" onClick={onClose} />
-      <div className="relative z-10 flex max-h-[90svh] flex-col rounded-t-2xl bg-eat-bg shadow-xl">
+      <div
+        className={`absolute inset-0 bg-black/40 transition-opacity duration-300 ${visible ? "opacity-100" : "opacity-0"}`}
+        onClick={handleClose}
+      />
+      <div
+        className={`relative z-10 flex max-h-[90svh] flex-col rounded-t-2xl bg-eat-bg shadow-xl transition-transform duration-300 ease-out ${visible ? "translate-y-0" : "translate-y-full"}`}
+      >
         <div className="flex justify-center pt-3 pb-1">
           <div className="h-1 w-10 rounded-full bg-eat-border" />
         </div>
-        {children}
+        {isLoaded ? (
+          <AddStoreForm onClose={handleClose} onSaved={onSaved} initialQuery={initialQuery} />
+        ) : (
+          <div className="flex h-32 items-center justify-center">
+            <p className="text-sm text-eat-text3">読み込み中...</p>
+          </div>
+        )}
       </div>
     </div>
   );
