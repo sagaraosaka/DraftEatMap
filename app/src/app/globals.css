@@ -28,7 +28,7 @@ body {
 }
 
 @utility pt-safe {
-  padding-top: env(safe-area-inset-top);
+  padding-top: max(env(safe-area-inset-top), 1rem);
 }
 
 @utility pb-safe {
