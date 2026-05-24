@@ -5,6 +5,7 @@ import { GoogleMap, Marker } from "@react-google-maps/api";
 import { useMapsLoaded } from "@/components/layout/MapsProvider";
 import AppHeader from "@/components/layout/AppHeader";
 import StoreSheet from "@/components/store/StoreSheet";
+import AddStore from "@/components/store/AddStore";
 import { getStores } from "@/lib/stores";
 import { DEFAULT_CENTER, DEFAULT_ZOOM, MAP_OPTIONS } from "@/lib/maps";
 import type { Store } from "@/types/store";
@@ -33,6 +34,7 @@ export default function MapPage() {
   const isLoaded = useMapsLoaded();
   const [stores, setStores] = useState<Store[]>([]);
   const [selected, setSelected] = useState<Store | null>(null);
+  const [showAdd, setShowAdd] = useState(false);
   const [locating, setLocating] = useState(false);
   const [locateError, setLocateError] = useState(false);
   const mapRef = useRef<google.maps.Map | null>(null);
@@ -85,7 +87,16 @@ export default function MapPage() {
 
   return (
     <div className="relative flex h-full flex-col">
-      <AppHeader />
+      <AppHeader
+        right={
+          <button
+            onClick={() => setShowAdd(true)}
+            className="flex h-8 w-8 items-center justify-center rounded-lg bg-eat-text text-sm font-bold text-eat-bg"
+          >
+            ＋
+          </button>
+        }
+      />
       <div className="relative flex-1">
       <GoogleMap
         mapContainerStyle={{ width: "100%", height: "100%" }}
@@ -103,6 +114,24 @@ export default function MapPage() {
           />
         ))}
       </GoogleMap>
+
+      {/* 空状態カード */}
+      {stores.length === 0 && (
+        <div className="absolute inset-x-0 top-6 z-10 flex justify-center px-6">
+          <div className="w-full max-w-sm rounded-2xl bg-white/95 backdrop-blur-sm border border-eat-border shadow-lg px-5 py-4">
+            <p className="text-[15px] font-semibold text-eat-text">行きたいお店を保存しよう</p>
+            <p className="mt-1 text-[12px] text-eat-text2 leading-relaxed">
+              食べイコはあなただけの飲食店メモ帳。気になるお店を保存して、「どこ行こう？」をすぐ解決。
+            </p>
+            <button
+              onClick={() => setShowAdd(true)}
+              className="mt-3 w-full rounded-xl bg-eat-text py-2.5 text-[13px] font-semibold text-eat-bg"
+            >
+              ＋ 最初のお店を追加
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* 現在地エラー */}
       {locateError && (
@@ -132,6 +161,16 @@ export default function MapPage() {
           <path d="M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8z" strokeOpacity="0.2" fill="currentColor" className="fill-eat-accent/10" />
         </svg>
       </button>
+
+      {showAdd && (
+        <AddStore
+          onClose={() => setShowAdd(false)}
+          onSaved={() => {
+            setShowAdd(false);
+            loadStores();
+          }}
+        />
+      )}
 
       {selected && (
         <StoreSheet
