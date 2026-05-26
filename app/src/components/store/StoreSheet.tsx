@@ -79,7 +79,8 @@ export default function StoreSheet({ store, onClose, onUpdated, onDeleted }: Sto
     const url = `${window.location.origin}/s/${current.id}`;
     const ratingStr = current.rating ? `★${current.rating}` : null;
     const parts = [ratingStr, ...current.tags].filter(Boolean);
-    const text = parts.length > 0 ? parts.join(" · ") : current.address;
+    const suffix = parts.length > 0 ? parts.join(" · ") : current.address;
+    const text = `${current.name} · ${suffix}`;
     if (navigator.share) {
       await navigator.share({ title: current.name, text, url }).catch(() => {});
     } else {

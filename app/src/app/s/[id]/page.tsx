@@ -34,7 +34,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   if (!store) return { title: "食べイコ" };
   const ratingStr = store.rating ? `★${store.rating}` : null;
   const parts = [ratingStr, ...store.tags].filter(Boolean);
-  const description = parts.length > 0 ? parts.join(" · ") : store.address;
+  const suffix = parts.length > 0 ? parts.join(" · ") : store.address;
+  const description = `${store.name} · ${suffix}`;
   return {
     title: `${store.name} - 食べイコ`,
     description,
