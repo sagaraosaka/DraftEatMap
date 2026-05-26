@@ -75,6 +75,16 @@ export default function StoreSheet({ store, onClose, onUpdated, onDeleted }: Sto
     return () => cancelAnimationFrame(id);
   }, []);
 
+  const handleShare = async () => {
+    const url = `${window.location.origin}/s/${current.id}`;
+    if (navigator.share) {
+      await navigator.share({ title: current.name, text: current.address, url }).catch(() => {});
+    } else {
+      await navigator.clipboard.writeText(url);
+      setToast("リンクをコピーしました");
+    }
+  };
+
   const closeSheet = (callback?: () => void) => {
     setVisible(false);
     setTimeout(() => (callback ?? onClose)(), 280);
@@ -176,6 +186,17 @@ export default function StoreSheet({ store, onClose, onUpdated, onDeleted }: Sto
             </div>
             {!editing && (
               <div className="flex items-center gap-2 shrink-0">
+                <button
+                  onClick={handleShare}
+                  className="flex items-center justify-center rounded-lg border border-eat-border p-1.5 text-eat-text2"
+                  aria-label="シェア"
+                >
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4">
+                    <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/>
+                    <polyline points="16 6 12 2 8 6"/>
+                    <line x1="12" y1="2" x2="12" y2="15"/>
+                  </svg>
+                </button>
                 <button
                   onClick={() => { setEditing(true); setEditTags(current.tags); }}
                   className="text-[12px] text-eat-text2 border border-eat-border rounded-lg px-2.5 py-1"

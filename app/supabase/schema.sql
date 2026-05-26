@@ -86,3 +86,26 @@ CREATE POLICY "users can delete own photos"
     bucket_id = 'store-photos' AND
     auth.uid()::text = (storage.foldername(name))[1]
   );
+
+-- ─── 公開シェア用関数 ───────────────────────
+-- ログイン不要でIDを指定して店舗情報を取得できる
+-- SECURITY DEFINER でRLSをバイパスするが、返すカラムを安全なものに限定
+CREATE OR REPLACE FUNCTION get_public_store(store_id uuid)
+RETURNS TABLE (
+  id        uuid,
+  name      text,
+  address   text,
+  lat       float8,
+  lng       float8,
+  tags      text[],
+  rating    smallint,
+  place_id  text
+)
+SECURITY DEFINER
+SET search_path = public
+LANGUAGE sql
+AS $$
+  SELECT id, name, address, lat, lng, tags, rating, place_id
+  FROM stores
+  WHERE stores.id = store_id;
+$$;

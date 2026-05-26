@@ -76,3 +76,21 @@ export async function deleteStore(id: string) {
   const { error } = await supabase.from("stores").delete().eq("id", id);
   if (error) throw new Error(error.message);
 }
+
+export type PublicStore = {
+  id: string;
+  name: string;
+  address: string;
+  lat: number;
+  lng: number;
+  tags: string[];
+  rating: number | null;
+  place_id: string;
+};
+
+export async function getPublicStore(id: string): Promise<PublicStore | null> {
+  const supabase = createClient();
+  const { data, error } = await supabase.rpc("get_public_store", { store_id: id });
+  if (error || !data || data.length === 0) return null;
+  return data[0] as PublicStore;
+}
