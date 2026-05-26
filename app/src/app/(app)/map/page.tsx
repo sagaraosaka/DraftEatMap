@@ -33,6 +33,7 @@ const MARKER_UNVISITED = {
 export default function MapPage() {
   const isLoaded = useMapsLoaded();
   const [stores, setStores] = useState<Store[]>([]);
+  const [storesLoaded, setStoresLoaded] = useState(false);
   const [selected, setSelected] = useState<Store | null>(null);
   const [showAdd, setShowAdd] = useState(false);
   const [locating, setLocating] = useState(false);
@@ -40,7 +41,7 @@ export default function MapPage() {
   const mapRef = useRef<google.maps.Map | null>(null);
 
   function loadStores() {
-    getStores().then(setStores).catch(() => {});
+    getStores().then((data) => { setStores(data); setStoresLoaded(true); }).catch(() => { setStoresLoaded(true); });
   }
 
   useEffect(() => {
@@ -116,7 +117,7 @@ export default function MapPage() {
       </GoogleMap>
 
       {/* 空状態カード */}
-      {stores.length === 0 && (
+      {storesLoaded && stores.length === 0 && (
         <div className="absolute inset-x-0 top-6 z-10 flex justify-center px-6">
           <div className="w-full max-w-sm rounded-2xl bg-white/95 backdrop-blur-sm border border-eat-border shadow-lg px-5 py-4">
             <p className="text-[15px] font-semibold text-eat-text">行きたいお店を保存しよう</p>
