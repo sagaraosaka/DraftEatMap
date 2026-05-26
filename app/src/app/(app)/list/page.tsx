@@ -80,7 +80,10 @@ export default function ListPage() {
 
       {/* 検索バー */}
       <div className="mx-4 mb-2 flex h-9 items-center gap-2 rounded-lg border border-eat-border bg-eat-surface px-3">
-        <span className="text-sm text-eat-text3">🔍</span>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4 shrink-0 text-eat-text3">
+          <circle cx="11" cy="11" r="8"/>
+          <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+        </svg>
         <input
           value={query}
           onChange={(e) => setQuery(e.target.value)}
@@ -99,7 +102,7 @@ export default function ListPage() {
       {areas.length >= 2 && (
         <div className="flex gap-1.5 overflow-x-auto px-4 pb-2 scrollbar-none">
           <Chip
-            label="📍 全エリア"
+            label="全エリア"
             active={areaFilter === "all"}
             onClick={() => setAreaFilter("all")}
           />
@@ -129,7 +132,11 @@ export default function ListPage() {
           </div>
         ) : filtered.length === 0 ? (
           <div className="flex h-40 flex-col items-center justify-center gap-2">
-            <p className="text-2xl">🍽️</p>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" className="h-8 w-8 text-eat-text3">
+              <path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/>
+              <path d="M7 2v20"/>
+              <path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3zm0 0v7"/>
+            </svg>
             <p className="text-sm text-eat-text3">
               {stores.length === 0 ? "まだ保存した店舗がありません" : "該当する店舗がありません"}
             </p>

@@ -7,6 +7,44 @@ import { getUser, signOut } from "@/lib/auth";
 import { getStores, deleteStore } from "@/lib/stores";
 import type { User } from "@supabase/supabase-js";
 
+function IconUser({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} strokeLinecap="round" strokeLinejoin="round" className={className}>
+      <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+      <circle cx="12" cy="7" r="4"/>
+    </svg>
+  );
+}
+
+function IconMoon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} strokeLinecap="round" strokeLinejoin="round" className={className}>
+      <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+    </svg>
+  );
+}
+
+function IconTrash({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} strokeLinecap="round" strokeLinejoin="round" className={className}>
+      <polyline points="3 6 5 6 21 6"/>
+      <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
+      <path d="M10 11v6M14 11v6"/>
+      <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
+    </svg>
+  );
+}
+
+function IconLogOut({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} strokeLinecap="round" strokeLinejoin="round" className={className}>
+      <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+      <polyline points="16 17 21 12 16 7"/>
+      <line x1="21" y1="12" x2="9" y2="12"/>
+    </svg>
+  );
+}
+
 export default function SettingsPage() {
   const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
@@ -44,8 +82,8 @@ export default function SettingsPage() {
 
         {/* プロフィール */}
         <div className="flex items-center gap-3 rounded-xl border border-eat-border bg-eat-surface p-3.5">
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-eat-accent text-lg">
-            👤
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-eat-accent">
+            <IconUser className="h-5 w-5 text-white" />
           </div>
           <div className="min-w-0">
             <p className="text-[13px] font-semibold text-eat-text">
@@ -59,7 +97,7 @@ export default function SettingsPage() {
         <div className="overflow-hidden rounded-xl border border-eat-border bg-eat-surface">
           <div className="flex items-center justify-between px-3.5 py-3">
             <div className="flex items-center gap-2.5">
-              <span className="w-5 text-center text-sm text-eat-text2">🌙</span>
+              <IconMoon className="h-5 w-5 text-eat-text2" />
               <span className="text-[13px] text-eat-text">ダークモード</span>
             </div>
             <div className="h-5 w-9 rounded-full bg-eat-accent relative">
@@ -76,7 +114,7 @@ export default function SettingsPage() {
             className="flex w-full items-center justify-between px-3.5 py-3 transition-colors hover:bg-eat-surface2 disabled:opacity-50"
           >
             <div className="flex items-center gap-2.5">
-              <span className="w-5 text-center text-sm text-eat-text2">🗑️</span>
+              <IconTrash className="h-5 w-5 text-eat-red" />
               <div className="text-left">
                 <p className="text-[13px] text-eat-text">
                   {deleting ? "削除中..." : "データをすべて削除"}
@@ -95,7 +133,7 @@ export default function SettingsPage() {
             className="flex w-full items-center justify-between px-3.5 py-3 transition-colors hover:bg-eat-surface2"
           >
             <div className="flex items-center gap-2.5">
-              <span className="w-5 text-center text-sm">🚪</span>
+              <IconLogOut className="h-5 w-5 text-eat-red" />
               <span className="text-[13px] text-eat-red">ログアウト</span>
             </div>
             <span className="text-xs text-eat-text3">›</span>
