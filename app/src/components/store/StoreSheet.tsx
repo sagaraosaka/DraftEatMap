@@ -77,8 +77,11 @@ export default function StoreSheet({ store, onClose, onUpdated, onDeleted }: Sto
 
   const handleShare = async () => {
     const url = `${window.location.origin}/s/${current.id}`;
+    const ratingStr = current.rating ? `★${current.rating}` : null;
+    const parts = [ratingStr, ...current.tags].filter(Boolean);
+    const text = parts.length > 0 ? parts.join(" · ") : current.address;
     if (navigator.share) {
-      await navigator.share({ title: current.name, text: current.address, url }).catch(() => {});
+      await navigator.share({ title: current.name, text, url }).catch(() => {});
     } else {
       await navigator.clipboard.writeText(url);
       setToast("リンクをコピーしました");

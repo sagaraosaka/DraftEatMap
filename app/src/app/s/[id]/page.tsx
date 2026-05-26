@@ -32,13 +32,15 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { id } = await params;
   const store = await fetchStore(id);
   if (!store) return { title: "食べイコ" };
-  const tagsStr = store.tags.join(" · ");
+  const ratingStr = store.rating ? `★${store.rating}` : null;
+  const parts = [ratingStr, ...store.tags].filter(Boolean);
+  const description = parts.length > 0 ? parts.join(" · ") : store.address;
   return {
     title: `${store.name} - 食べイコ`,
-    description: tagsStr ? `${store.address} · ${tagsStr}` : store.address,
+    description,
     openGraph: {
       title: store.name,
-      description: store.address,
+      description,
       siteName: "食べイコ",
       type: "website",
     },
