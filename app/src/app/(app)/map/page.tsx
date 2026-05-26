@@ -10,6 +10,9 @@ import { getStores } from "@/lib/stores";
 import { DEFAULT_CENTER, DEFAULT_ZOOM, MAP_OPTIONS } from "@/lib/maps";
 import type { Store } from "@/types/store";
 
+// タブ切り替え時の再マウントでもフラッシュしないようにモジュールレベルでキャッシュ
+let _storeCache: Store[] | null = null;
+
 const MARKER_VISITED = {
   path: "M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z",
   fillColor: "#448361",
@@ -32,8 +35,8 @@ const MARKER_UNVISITED = {
 
 export default function MapPage() {
   const isLoaded = useMapsLoaded();
-  const [stores, setStores] = useState<Store[]>([]);
-  const [storesLoaded, setStoresLoaded] = useState(false);
+  const [stores, setStores] = useState<Store[]>(_storeCache ?? []);
+  const [storesLoaded, setStoresLoaded] = useState(_storeCache !== null);
   const [selected, setSelected] = useState<Store | null>(null);
   const [showAdd, setShowAdd] = useState(false);
   const [locating, setLocating] = useState(false);
@@ -41,7 +44,7 @@ export default function MapPage() {
   const mapRef = useRef<google.maps.Map | null>(null);
 
   function loadStores() {
-    getStores().then((data) => { setStores(data); setStoresLoaded(true); }).catch(() => { setStoresLoaded(true); });
+    getStores().then((data) => { _storeCache = data; setStores(data); setStoresLoaded(true); }).catch(() => { setStoresLoaded(true); });
   }
 
   useEffect(() => {
