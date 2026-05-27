@@ -13,25 +13,14 @@ import type { Store } from "@/types/store";
 // タブ切り替え時の再マウントでもフラッシュしないようにモジュールレベルでキャッシュ
 let _storeCache: Store[] | null = null;
 
-const MARKER_VISITED = {
-  path: "M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z",
-  fillColor: "#448361",
-  fillOpacity: 1,
-  strokeColor: "#fff",
-  strokeWeight: 1.5,
-  scale: 1.6,
-  anchor: { x: 12, y: 22 } as google.maps.Point,
-};
+const MARKER_PATH = "M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z";
+const MARKER_BASE = { path: MARKER_PATH, fillOpacity: 1, strokeColor: "#fff", strokeWeight: 1.5, scale: 1.6, anchor: { x: 12, y: 22 } as google.maps.Point };
 
-const MARKER_UNVISITED = {
-  path: "M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z",
-  fillColor: "#C8952A",
-  fillOpacity: 1,
-  strokeColor: "#fff",
-  strokeWeight: 1.5,
-  scale: 1.6,
-  anchor: { x: 12, y: 22 } as google.maps.Point,
-};
+function markerIcon(store: Store) {
+  if (store.status === "unvisited") return { ...MARKER_BASE, fillColor: "#C8952A" };
+  if ((store.rating ?? 0) >= 4)    return { ...MARKER_BASE, fillColor: "#337EA9" }; // 高評価: ブルー
+  return { ...MARKER_BASE, fillColor: "#448361" };                                   // 通常訪問済: グリーン
+}
 
 export default function MapPage() {
   const isLoaded = useMapsLoaded();
@@ -113,7 +102,7 @@ export default function MapPage() {
           <Marker
             key={store.id}
             position={{ lat: store.lat, lng: store.lng }}
-            icon={store.status === "visited" ? MARKER_VISITED : MARKER_UNVISITED}
+            icon={markerIcon(store)}
             onClick={() => setSelected(store)}
           />
         ))}
