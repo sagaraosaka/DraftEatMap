@@ -31,24 +31,34 @@ export default function MapPage() {
   const [showAdd, setShowAdd] = useState(false);
   const [locating, setLocating] = useState(false);
   const [locateError, setLocateError] = useState(false);
+  const [mapReady, setMapReady] = useState(false);
   const mapRef = useRef<google.maps.Map | null>(null);
+  const hasFitBounds = useRef(false);
+
+  function fitAll(data: Store[]) {
+    if (hasFitBounds.current || !mapRef.current || data.length === 0) return;
+    hasFitBounds.current = true;
+    const bounds = new google.maps.LatLngBounds();
+    data.forEach((s) => bounds.extend({ lat: s.lat, lng: s.lng }));
+    mapRef.current.fitBounds(bounds, 60);
+  }
 
   function loadStores() {
     getStores().then((data) => {
       _storeCache = data;
       setStores(data);
       setStoresLoaded(true);
-      if (mapRef.current && data.length > 0) {
-        const bounds = new google.maps.LatLngBounds();
-        data.forEach((s) => bounds.extend({ lat: s.lat, lng: s.lng }));
-        mapRef.current.fitBounds(bounds, 60);
-      }
+      fitAll(data);
     }).catch(() => { setStoresLoaded(true); });
   }
 
   useEffect(() => {
     loadStores();
   }, []);
+
+  useEffect(() => {
+    if (mapReady) fitAll(stores);
+  }, [mapReady]);
 
   const handleLocate = () => {
     if (!navigator.geolocation) return;
@@ -68,17 +78,10 @@ export default function MapPage() {
     );
   };
 
-  const onLoad = useCallback(
-    (map: google.maps.Map) => {
-      mapRef.current = map;
-      if (stores.length > 0) {
-        const bounds = new google.maps.LatLngBounds();
-        stores.forEach((s) => bounds.extend({ lat: s.lat, lng: s.lng }));
-        map.fitBounds(bounds, 60);
-      }
-    },
-    [stores]
-  );
+  const onLoad = useCallback((map: google.maps.Map) => {
+    mapRef.current = map;
+    setMapReady(true);
+  }, []);
 
   if (!isLoaded) {
     return (
