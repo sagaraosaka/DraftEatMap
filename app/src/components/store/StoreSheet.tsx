@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Badge from "@/components/ui/Badge";
 import Toast from "@/components/ui/Toast";
 import { updateStoreStatus, updateStore, deleteStore } from "@/lib/stores";
@@ -69,6 +69,9 @@ export default function StoreSheet({ store, onClose, onUpdated, onDeleted }: Sto
   const [memoValue, setMemoValue] = useState(store.memo ?? "");
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
+  const [dragY, setDragY] = useState(0);
+  const [isDragging, setIsDragging] = useState(false);
+  const dragStartY = useRef(0);
 
   useEffect(() => {
     const id = requestAnimationFrame(() => setVisible(true));
@@ -86,6 +89,26 @@ export default function StoreSheet({ store, onClose, onUpdated, onDeleted }: Sto
     } else {
       await navigator.clipboard.writeText(url);
       setToast("リンクをコピーしました");
+    }
+  };
+
+  const handleDragStart = (e: React.PointerEvent) => {
+    e.currentTarget.setPointerCapture(e.pointerId);
+    dragStartY.current = e.clientY;
+    setIsDragging(true);
+  };
+
+  const handleDragMove = (e: React.PointerEvent) => {
+    if (!isDragging) return;
+    setDragY(Math.max(0, e.clientY - dragStartY.current));
+  };
+
+  const handleDragEnd = () => {
+    setIsDragging(false);
+    if (dragY > 120) {
+      closeSheet();
+    } else {
+      setDragY(0);
     }
   };
 
@@ -174,10 +197,22 @@ export default function StoreSheet({ store, onClose, onUpdated, onDeleted }: Sto
         onClick={editing ? undefined : () => closeSheet()}
       />
       <div
-        className={`relative z-10 flex max-h-[85svh] flex-col rounded-t-2xl bg-eat-bg shadow-xl transition-transform duration-300 ease-out ${visible ? "translate-y-0" : "translate-y-full"}`}
+        className="relative z-10 flex max-h-[85svh] flex-col rounded-t-2xl bg-eat-bg shadow-xl"
+        style={{
+          transform: isDragging
+            ? `translateY(${dragY}px)`
+            : visible ? "translateY(0)" : "translateY(100%)",
+          transition: isDragging ? "none" : "transform 300ms ease-out",
+        }}
       >
         {/* Handle */}
-        <div className="flex justify-center pt-3 pb-2">
+        <div
+          className="flex justify-center pt-3 pb-2 touch-none cursor-grab active:cursor-grabbing"
+          onPointerDown={handleDragStart}
+          onPointerMove={handleDragMove}
+          onPointerUp={handleDragEnd}
+          onPointerCancel={handleDragEnd}
+        >
           <div className="h-1 w-10 rounded-full bg-eat-border" />
         </div>
 
