@@ -34,7 +34,16 @@ export default function MapPage() {
   const mapRef = useRef<google.maps.Map | null>(null);
 
   function loadStores() {
-    getStores().then((data) => { _storeCache = data; setStores(data); setStoresLoaded(true); }).catch(() => { setStoresLoaded(true); });
+    getStores().then((data) => {
+      _storeCache = data;
+      setStores(data);
+      setStoresLoaded(true);
+      if (mapRef.current && data.length > 0) {
+        const bounds = new google.maps.LatLngBounds();
+        data.forEach((s) => bounds.extend({ lat: s.lat, lng: s.lng }));
+        mapRef.current.fitBounds(bounds, 60);
+      }
+    }).catch(() => { setStoresLoaded(true); });
   }
 
   useEffect(() => {
