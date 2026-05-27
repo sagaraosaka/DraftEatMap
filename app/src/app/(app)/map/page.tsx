@@ -32,15 +32,19 @@ export default function MapPage() {
   const [locating, setLocating] = useState(false);
   const [locateError, setLocateError] = useState(false);
   const [mapReady, setMapReady] = useState(false);
+  const [mapVisible, setMapVisible] = useState(false);
   const mapRef = useRef<google.maps.Map | null>(null);
   const hasFitBounds = useRef(false);
 
   function fitAll(data: Store[]) {
-    if (hasFitBounds.current || !mapRef.current || data.length === 0) return;
+    if (hasFitBounds.current) return;
+    if (data.length === 0) { setMapVisible(true); return; }
+    if (!mapRef.current) return;
     hasFitBounds.current = true;
     const bounds = new google.maps.LatLngBounds();
     data.forEach((s) => bounds.extend({ lat: s.lat, lng: s.lng }));
     mapRef.current.fitBounds(bounds, 60);
+    setMapVisible(true);
   }
 
   function loadStores() {
@@ -49,7 +53,7 @@ export default function MapPage() {
       setStores(data);
       setStoresLoaded(true);
       fitAll(data);
-    }).catch(() => { setStoresLoaded(true); });
+    }).catch(() => { setStoresLoaded(true); setMapVisible(true); });
   }
 
   useEffect(() => {
@@ -103,7 +107,7 @@ export default function MapPage() {
           </button>
         }
       />
-      <div className="relative flex-1">
+      <div className={`relative flex-1 transition-opacity duration-300 ${mapVisible ? "opacity-100" : "opacity-0"}`}>
       <GoogleMap
         mapContainerStyle={{ width: "100%", height: "100%" }}
         center={DEFAULT_CENTER}
