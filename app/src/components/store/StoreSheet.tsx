@@ -10,7 +10,7 @@ import type { Store } from "@/types/store";
 interface StoreSheetProps {
   store: Store;
   onClose: () => void;
-  onUpdated: () => void;
+  onUpdated: (store: Store) => void;
   onDeleted: () => void;
 }
 
@@ -131,7 +131,7 @@ export default function StoreSheet({ store, onClose, onUpdated, onDeleted }: Sto
       });
       setCurrent(next);
       setToast("保存しました ✓");
-      onUpdated();
+      onUpdated(next);
     } finally {
       setSavingInline(false);
     }
@@ -150,8 +150,9 @@ export default function StoreSheet({ store, onClose, onUpdated, onDeleted }: Sto
     try {
       await updateStoreStatus(current.id, nextStatus);
       const visited_at = nextStatus === "visited" ? new Date().toISOString() : null;
-      setCurrent((s) => ({ ...s, status: nextStatus, visited_at }));
-      onUpdated();
+      const updated = { ...current, status: nextStatus, visited_at } as Store;
+      setCurrent(updated);
+      onUpdated(updated);
     } finally {
       setBusy(false);
     }
@@ -166,8 +167,9 @@ export default function StoreSheet({ store, onClose, onUpdated, onDeleted }: Sto
         rating: current.rating,
         visited_at: current.visited_at,
       });
-      setCurrent((s) => ({ ...s, tags: editTags }));
-      onUpdated();
+      const updated = { ...current, tags: editTags };
+      setCurrent(updated);
+      onUpdated(updated);
       setEditing(false);
     } finally {
       setBusy(false);

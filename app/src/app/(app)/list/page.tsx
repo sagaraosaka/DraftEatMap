@@ -171,7 +171,10 @@ export default function ListPage() {
       <StoreSheet
         store={selectedStore}
         onClose={() => setSelectedStore(null)}
-        onUpdated={loadStores}
+        onUpdated={(updated) => {
+          setStores((prev) => prev.map((s) => s.id === updated.id ? updated : s));
+          setSelectedStore(updated);
+        }}
         onDeleted={() => {
           setSelectedStore(null);
           loadStores();

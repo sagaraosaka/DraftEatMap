@@ -18,8 +18,9 @@ const MARKER_BASE = { path: MARKER_PATH, fillOpacity: 1, strokeColor: "#fff", st
 
 function markerIcon(store: Store) {
   if (store.status === "unvisited") return { ...MARKER_BASE, fillColor: "#C8952A" };
-  if ((store.rating ?? 0) >= 4)    return { ...MARKER_BASE, fillColor: "#337EA9" }; // 高評価: ブルー
-  return { ...MARKER_BASE, fillColor: "#448361" };                                   // 通常訪問済: グリーン
+  if (store.rating === null)        return { ...MARKER_BASE, fillColor: "#9E9E9E" }; // 評価なし: グレー
+  if (store.rating >= 3)            return { ...MARKER_BASE, fillColor: "#8CB34A" }; // ★3以上: 黄緑
+  return { ...MARKER_BASE, fillColor: "#E05050" };                                   // ★1〜2: 赤
 }
 
 export default function MapPage() {
@@ -169,7 +170,11 @@ export default function MapPage() {
         <StoreSheet
           store={selected}
           onClose={() => setSelected(null)}
-          onUpdated={loadStores}
+          onUpdated={(updated) => {
+            setStores((prev) => prev.map((s) => s.id === updated.id ? updated : s));
+            _storeCache = (_storeCache ?? []).map((s) => s.id === updated.id ? updated : s);
+            setSelected(updated);
+          }}
           onDeleted={() => {
             setSelected(null);
             loadStores();
