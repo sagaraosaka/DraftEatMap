@@ -13,6 +13,6 @@ const targets = [
 ];
 
 for (const { file, size } of targets) {
-  await sharp(svg).resize(size, size).png().toFile(resolve(__dirname, "../public", file));
+  await sharp(svg).resize(size, size).flatten({ background: "#C8952A" }).png().toFile(resolve(__dirname, "../public", file));
   console.log(`✓ ${file}`);
 }
