@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { addStore, deleteAllStores, getPublicStore, DuplicateStoreError } from "@/lib/stores";
+import { addStore, deleteAllStores, getPublicStore, updateStoreStatus, setStorePublic, DuplicateStoreError } from "@/lib/stores";
 
 const mockFrom = vi.fn();
 const mockRpc = vi.fn();
@@ -21,7 +21,7 @@ const PLACE: Parameters<typeof addStore>[0] = {
   place_id: "place_abc123",
 };
 
-const STORE = { ...PLACE, id: "store-id-1", user_id: "user-1", status: "unvisited", tags: [], memo: null, rating: null, photo_url: null, price_range: null, tabelog_url: null, visited_at: null, created_at: new Date().toISOString() };
+const STORE = { ...PLACE, id: "store-id-1", user_id: "user-1", status: "unvisited" as const, tags: [], memo: null, rating: null, photo_url: null, price_range: null, tabelog_url: null, visited_at: null, created_at: new Date().toISOString(), is_public: false, area: null };
 
 function makeChain(result: unknown) {
   const chain: Record<string, unknown> = {};
@@ -79,6 +79,36 @@ describe("deleteAllStores", () => {
     await deleteAllStores();
     expect(mockFrom).toHaveBeenCalledTimes(1);
     expect(mockFrom).toHaveBeenCalledWith("stores");
+  });
+});
+
+describe("updateStoreStatus", () => {
+  it("visited に更新し visited_at を設定する", async () => {
+    const chain = makeChain({ error: null });
+    mockFrom.mockReturnValue(chain);
+    await updateStoreStatus("store-1", "visited");
+    expect(chain.update).toHaveBeenCalledWith(
+      expect.objectContaining({ status: "visited", visited_at: expect.any(String) })
+    );
+  });
+
+  it("unvisited に戻すと visited_at を null にする", async () => {
+    const chain = makeChain({ error: null });
+    mockFrom.mockReturnValue(chain);
+    await updateStoreStatus("store-1", "unvisited");
+    expect(chain.update).toHaveBeenCalledWith(
+      expect.objectContaining({ status: "unvisited", visited_at: null })
+    );
+  });
+});
+
+describe("setStorePublic", () => {
+  it("is_public を true にセットする", async () => {
+    const chain = makeChain({ error: null });
+    mockFrom.mockReturnValue(chain);
+    await setStorePublic("store-1");
+    expect(chain.update).toHaveBeenCalledWith({ is_public: true });
+    expect(chain.eq).toHaveBeenCalledWith("id", "store-1");
   });
 });
 

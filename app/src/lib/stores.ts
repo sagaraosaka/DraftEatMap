@@ -1,6 +1,11 @@
 import { createClient } from "./supabase";
 import type { Store, StoreStatus } from "@/types/store";
 
+function extractArea(address: string): string {
+  const m = address.match(/([^\s都道府県]+[市区町村])/);
+  return m ? m[1] : "";
+}
+
 export class DuplicateStoreError extends Error {
   constructor(public existing: Store) {
     super("すでにリストに追加されています");
@@ -47,6 +52,7 @@ export async function addStore(
     price_range: null,
     tabelog_url: null,
     visited_at: null,
+    area: extractArea(place.address) || null,
   };
 
   const { data, error } = await supabase.from("stores").insert(payload).select().single();

@@ -18,6 +18,7 @@ export interface Store {
   visited_at: string | null;
   created_at: string;
   is_public: boolean;
+  area: string | null;
 }
 
 export const PRESET_TAGS = [

@@ -45,7 +45,7 @@ export default function ListPage() {
   const areas = useMemo(() => {
     const set = new Set<string>();
     stores.forEach((s) => {
-      const a = extractArea(s.address);
+      const a = s.area || extractArea(s.address);
       if (a) set.add(a);
     });
     return [...set];
@@ -53,7 +53,7 @@ export default function ListPage() {
 
   const filtered = useMemo(() => {
     return stores.filter((s) => {
-      if (areaFilter !== "all" && extractArea(s.address) !== areaFilter) return false;
+      if (areaFilter !== "all" && (s.area || extractArea(s.address)) !== areaFilter) return false;
       if (filter === "unvisited" && s.status !== "unvisited") return false;
       if (filter === "visited"   && s.status !== "visited")   return false;
       if (filter !== "all" && filter !== "unvisited" && filter !== "visited") {
