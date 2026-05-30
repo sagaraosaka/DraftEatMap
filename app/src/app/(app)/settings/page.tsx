@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import AppHeader from "@/components/layout/AppHeader";
 import { getUser, signOut } from "@/lib/auth";
-import { getStores, deleteStore } from "@/lib/stores";
+import { deleteAllStores } from "@/lib/stores";
 import type { User } from "@supabase/supabase-js";
 
 function IconUser({ className }: { className?: string }) {
@@ -66,8 +66,7 @@ export default function SettingsPage() {
     if (!confirmed) return;
     setDeleting(true);
     try {
-      const stores = await getStores();
-      await Promise.all(stores.map((s) => deleteStore(s.id)));
+      await deleteAllStores();
       alert("すべてのデータを削除しました。");
     } finally {
       setDeleting(false);

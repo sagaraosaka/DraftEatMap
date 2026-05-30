@@ -132,6 +132,9 @@ export default function StoreSheet({ store, onClose, onUpdated, onDeleted }: Sto
       setCurrent(next);
       setToast("保存しました ✓");
       onUpdated(next);
+    } catch {
+      setToast("保存に失敗しました ✗");
+      if ("memo" in patch) setMemoValue(current.memo ?? "");
     } finally {
       setSavingInline(false);
     }

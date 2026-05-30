@@ -91,6 +91,14 @@ export async function deleteStore(id: string) {
   if (error) throw new Error(error.message);
 }
 
+export async function deleteAllStores() {
+  const supabase = createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error("ログインが必要です");
+  const { error } = await supabase.from("stores").delete().eq("user_id", user.id);
+  if (error) throw new Error(error.message);
+}
+
 export type PublicStore = {
   id: string;
   name: string;
