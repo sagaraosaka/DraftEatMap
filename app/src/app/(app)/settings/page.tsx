@@ -16,13 +16,6 @@ function IconUser({ className }: { className?: string }) {
   );
 }
 
-function IconMoon({ className }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} strokeLinecap="round" strokeLinejoin="round" className={className}>
-      <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
-    </svg>
-  );
-}
 
 function IconTrash({ className }: { className?: string }) {
   return (
@@ -89,19 +82,6 @@ export default function SettingsPage() {
               {user?.email?.split("@")[0] ?? "—"}
             </p>
             <p className="truncate text-[11px] text-eat-text3">{user?.email ?? "読み込み中..."}</p>
-          </div>
-        </div>
-
-        {/* ダークモード（Phase 2） */}
-        <div className="overflow-hidden rounded-xl border border-eat-border bg-eat-surface">
-          <div className="flex items-center justify-between px-3.5 py-3">
-            <div className="flex items-center gap-2.5">
-              <IconMoon className="h-5 w-5 text-eat-text2" />
-              <span className="text-[13px] text-eat-text">ダークモード</span>
-            </div>
-            <div className="h-5 w-9 rounded-full bg-eat-accent relative">
-              <div className="absolute top-0.5 right-0.5 h-4 w-4 rounded-full bg-white" />
-            </div>
           </div>
         </div>
 

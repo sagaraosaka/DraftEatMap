@@ -2,12 +2,13 @@ import { createServerClient } from "@supabase/ssr";
 import { NextRequest, NextResponse } from "next/server";
 
 const PUBLIC_PREFIXES = ["/login", "/auth", "/s/", "/share"];
+const PUBLIC_EXACT = ["/"];
 
 export async function middleware(request: NextRequest) {
   const response = NextResponse.next();
   const { pathname } = request.nextUrl;
 
-  const isPublic = PUBLIC_PREFIXES.some((p) => pathname.startsWith(p));
+  const isPublic = PUBLIC_EXACT.includes(pathname) || PUBLIC_PREFIXES.some((p) => pathname.startsWith(p));
 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
