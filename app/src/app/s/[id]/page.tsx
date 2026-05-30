@@ -66,7 +66,7 @@ export default async function PublicStorePage({ params }: Props) {
   }
 
   const mapsUrl = `https://maps.google.com/?q=${store.lat},${store.lng}`;
-  const addUrl = `/share?title=${encodeURIComponent(store.name)}`;
+  const addUrl = `/share?store_id=${store.id}`;
   const rating = store.rating;
   const emoji = tagEmoji(store.tags);
 
