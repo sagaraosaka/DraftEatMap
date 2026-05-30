@@ -91,6 +91,12 @@ export async function deleteStore(id: string) {
   if (error) throw new Error(error.message);
 }
 
+export async function setStorePublic(id: string) {
+  const supabase = createClient();
+  const { error } = await supabase.from("stores").update({ is_public: true }).eq("id", id);
+  if (error) throw new Error(error.message);
+}
+
 export async function deleteAllStores() {
   const supabase = createClient();
   const { data: { user } } = await supabase.auth.getUser();

@@ -1,8 +1,13 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextRequest, NextResponse } from "next/server";
 
-export async function proxy(request: NextRequest) {
+const PUBLIC_PREFIXES = ["/login", "/auth", "/s/", "/share"];
+
+export async function middleware(request: NextRequest) {
   const response = NextResponse.next();
+  const { pathname } = request.nextUrl;
+
+  const isPublic = PUBLIC_PREFIXES.some((p) => pathname.startsWith(p));
 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -20,13 +25,14 @@ export async function proxy(request: NextRequest) {
   );
 
   const { data: { user } } = await supabase.auth.getUser();
-  const { pathname } = request.nextUrl;
 
-  if (!user && pathname !== "/login" && !pathname.startsWith("/auth")) {
-    return NextResponse.redirect(new URL("/login", request.url));
+  if (!isPublic && !user) {
+    const loginUrl = new URL("/login", request.url);
+    loginUrl.searchParams.set("next", pathname + request.nextUrl.search);
+    return NextResponse.redirect(loginUrl);
   }
 
-  if (user && pathname === "/login") {
+  if (pathname === "/login" && user) {
     return NextResponse.redirect(new URL("/map", request.url));
   }
 
@@ -34,5 +40,7 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/((?!_next/static|_next/image|favicon.ico).*)"],
+  matcher: [
+    "/((?!_next/static|_next/image|favicon.ico|icon.*\\.png|apple-touch-icon\\.png|manifest\\.json).*)",
+  ],
 };

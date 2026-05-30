@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import Badge from "@/components/ui/Badge";
 import Toast from "@/components/ui/Toast";
-import { updateStoreStatus, updateStore, deleteStore } from "@/lib/stores";
+import { updateStoreStatus, updateStore, deleteStore, setStorePublic } from "@/lib/stores";
 import { PRESET_TAGS } from "@/types/store";
 import type { Store } from "@/types/store";
 
@@ -79,6 +79,17 @@ export default function StoreSheet({ store, onClose, onUpdated, onDeleted }: Sto
   }, []);
 
   const handleShare = async () => {
+    if (!current.is_public) {
+      try {
+        await setStorePublic(current.id);
+        const updated = { ...current, is_public: true };
+        setCurrent(updated);
+        onUpdated(updated);
+      } catch {
+        setToast("公開設定に失敗しました");
+        return;
+      }
+    }
     const url = `${window.location.origin}/s/${current.id}`;
     const ratingStr = current.rating ? `★${current.rating}` : null;
     const parts = [ratingStr, ...current.tags].filter(Boolean);

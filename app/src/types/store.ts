@@ -17,6 +17,7 @@ export interface Store {
   tabelog_url: string | null;
   visited_at: string | null;
   created_at: string;
+  is_public: boolean;
 }
 
 export const PRESET_TAGS = [

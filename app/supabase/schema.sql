@@ -87,9 +87,14 @@ CREATE POLICY "users can delete own photos"
     auth.uid()::text = (storage.foldername(name))[1]
   );
 
+-- ─── マイグレーション: is_public カラム追加 ───────────────────────
+-- Supabase Dashboard の SQL Editor で一度だけ実行すること:
+-- ALTER TABLE stores ADD COLUMN IF NOT EXISTS is_public BOOLEAN NOT NULL DEFAULT false;
+
 -- ─── 公開シェア用関数 ───────────────────────
 -- ログイン不要でIDを指定して店舗情報を取得できる
 -- SECURITY DEFINER でRLSをバイパスするが、返すカラムを安全なものに限定
+-- is_public = true の店舗のみ返す（シェアボタン押下時に設定される）
 CREATE OR REPLACE FUNCTION get_public_store(store_id uuid)
 RETURNS TABLE (
   id        uuid,
@@ -107,5 +112,5 @@ LANGUAGE sql
 AS $$
   SELECT id, name, address, lat, lng, tags, rating, place_id
   FROM stores
-  WHERE stores.id = store_id;
+  WHERE stores.id = store_id AND stores.is_public = true;
 $$;

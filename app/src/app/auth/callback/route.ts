@@ -32,5 +32,10 @@ export async function GET(request: NextRequest) {
     await supabase.auth.exchangeCodeForSession(code);
   }
 
-  return NextResponse.redirect(`${origin}/map`);
+  const returnTo = request.cookies.get("auth_return_to")?.value;
+  const dest = returnTo && returnTo.startsWith("/") ? decodeURIComponent(returnTo) : "/map";
+
+  const response = NextResponse.redirect(`${origin}${dest}`);
+  response.cookies.delete("auth_return_to");
+  return response;
 }

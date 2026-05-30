@@ -1,21 +1,32 @@
 "use client";
 
-import { useState } from "react";
+import { useState, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import { signInWithMagicLink, signInWithGoogle } from "@/lib/auth";
 
 type Step = "input" | "sent";
 
-export default function LoginPage() {
+function LoginForm() {
+  const searchParams = useSearchParams();
+  const next = searchParams.get("next") ?? "";
+
   const [email, setEmail] = useState("");
   const [step, setStep] = useState<Step>("input");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  function saveReturnTo() {
+    if (next) {
+      document.cookie = `auth_return_to=${encodeURIComponent(next)}; path=/; max-age=600; SameSite=Lax`;
+    }
+  }
 
   async function handleSubmit(e: React.SyntheticEvent<HTMLFormElement>) {
     e.preventDefault();
     setLoading(true);
     setError(null);
     try {
+      saveReturnTo();
       await signInWithMagicLink(email);
       setStep("sent");
     } catch {
@@ -26,7 +37,7 @@ export default function LoginPage() {
   }
 
   return (
-    <main className="flex h-full flex-col items-center justify-center px-8">
+    <main className="flex h-full flex-col items-center justify-center px-8 bg-eat-bg">
       <div className="w-full max-w-sm">
 
         {/* ロゴ */}
@@ -46,7 +57,7 @@ export default function LoginPage() {
           <div className="flex flex-col gap-3">
           {/* Googleログイン */}
           <button
-            onClick={() => signInWithGoogle()}
+            onClick={() => { saveReturnTo(); signInWithGoogle(); }}
             className="flex h-11 w-full items-center justify-center gap-2.5 rounded-lg border border-eat-border bg-eat-surface text-sm font-medium text-eat-text transition-colors hover:bg-eat-surface2"
           >
             <svg viewBox="0 0 24 24" className="h-4 w-4" xmlns="http://www.w3.org/2000/svg">
@@ -115,5 +126,13 @@ export default function LoginPage() {
         )}
       </div>
     </main>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={<div className="flex h-full items-center justify-center bg-eat-bg" />}>
+      <LoginForm />
+    </Suspense>
   );
 }
