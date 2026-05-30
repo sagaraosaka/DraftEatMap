@@ -5,9 +5,10 @@ import { useSearchParams, useRouter } from "next/navigation";
 import MapsProvider from "@/components/layout/MapsProvider";
 import { useMapsLoaded } from "@/components/layout/MapsProvider";
 import { AddStoreForm } from "@/components/store/AddStore";
-import { getPublicStore, addStore } from "@/lib/stores";
+import { getPublicStore, addStore, DuplicateStoreError } from "@/lib/stores";
 import { PRESET_TAGS } from "@/types/store";
 import type { PublicStore } from "@/lib/stores";
+import type { Store } from "@/types/store";
 
 function QuickAdd({ storeId }: { storeId: string }) {
   const router = useRouter();
@@ -15,6 +16,7 @@ function QuickAdd({ storeId }: { storeId: string }) {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [duplicate, setDuplicate] = useState<Store | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [tags, setTags] = useState<string[]>([]);
 
@@ -35,11 +37,13 @@ function QuickAdd({ storeId }: { storeId: string }) {
       await addStore({ name: store.name, address: store.address, lat: store.lat, lng: store.lng, place_id: store.place_id }, tags, "");
       setSaved(true);
     } catch (e) {
-      const msg = (e as Error).message;
-      if (msg === "ログインが必要です") {
+      if (e instanceof DuplicateStoreError) {
+        setDuplicate(e.existing);
+        setSaving(false);
+      } else if ((e as Error).message === "ログインが必要です") {
         router.push("/login");
       } else {
-        setError(msg);
+        setError((e as Error).message);
         setSaving(false);
       }
     }
@@ -61,6 +65,28 @@ function QuickAdd({ storeId }: { storeId: string }) {
       <div className="flex flex-1 flex-col items-center justify-center gap-2 px-6 text-center">
         <p className="text-[15px] font-semibold text-eat-text">お店が見つかりません</p>
         <p className="text-[13px] text-eat-text3">このリンクは無効か、削除されました</p>
+      </div>
+    );
+  }
+
+  if (duplicate) {
+    return (
+      <div className="flex flex-1 flex-col items-center justify-center gap-4 px-6 text-center">
+        <div className="flex h-16 w-16 items-center justify-center rounded-full bg-eat-accent/10">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className="h-8 w-8 text-eat-accent">
+            <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+          </svg>
+        </div>
+        <div>
+          <p className="text-[16px] font-bold text-eat-text">すでにリストにあります</p>
+          <p className="mt-1 text-[13px] text-eat-text3">{duplicate.name}</p>
+        </div>
+        <button
+          onClick={() => router.push("/map")}
+          className="mt-2 w-full max-w-xs rounded-xl bg-eat-text py-3 text-[14px] font-semibold text-eat-bg"
+        >
+          マップで確認
+        </button>
       </div>
     );
   }
@@ -141,7 +167,10 @@ function ShareContent() {
   const storeId = params.get("store_id");
   const title = params.get("title") ?? "";
   const text = params.get("text") ?? "";
-  const initialQuery = title || text.replace(/https?:\/\/\S+/g, "").trim();
+  const url = params.get("url") ?? "";
+  // 外部アプリはtitleより url に情報を入れることが多いため url からも店名候補を抽出
+  const queryFromUrl = url.match(/maps\.google\.[^/]+\/maps\/place\/([^/@?]+)/)?.[1]?.replace(/\+/g, " ") ?? "";
+  const initialQuery = title || text.replace(/https?:\/\/\S+/g, "").trim() || queryFromUrl || url;
   const isLoaded = useMapsLoaded();
 
   return (

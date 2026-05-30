@@ -1,6 +1,12 @@
 import { createClient } from "./supabase";
 import type { Store, StoreStatus } from "@/types/store";
 
+export class DuplicateStoreError extends Error {
+  constructor(public existing: Store) {
+    super("すでにリストに追加されています");
+  }
+}
+
 export interface PlaceData {
   name: string;
   address: string;
@@ -17,6 +23,14 @@ export async function addStore(
   const supabase = createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error("ログインが必要です");
+
+  const { data: existing } = await supabase
+    .from("stores")
+    .select("*")
+    .eq("user_id", user.id)
+    .eq("place_id", place.place_id)
+    .maybeSingle();
+  if (existing) throw new DuplicateStoreError(existing as Store);
 
   const payload = {
     user_id: user.id,

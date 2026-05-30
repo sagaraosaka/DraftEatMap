@@ -35,34 +35,37 @@ export default function MapPage() {
   const [mapVisible, setMapVisible] = useState(false);
   const mapRef = useRef<google.maps.Map | null>(null);
   const hasFitBounds = useRef(false);
+  const storesRef = useRef<Store[]>(_storeCache ?? []);
 
-  function fitAll(data: Store[]) {
+  const fitAll = useCallback((data?: Store[]) => {
+    const d = data ?? storesRef.current;
     if (hasFitBounds.current) return;
-    if (data.length === 0) { setMapVisible(true); return; }
+    if (d.length === 0) { setMapVisible(true); return; }
     if (!mapRef.current) return;
     hasFitBounds.current = true;
     const bounds = new google.maps.LatLngBounds();
-    data.forEach((s) => bounds.extend({ lat: s.lat, lng: s.lng }));
+    d.forEach((s) => bounds.extend({ lat: s.lat, lng: s.lng }));
     mapRef.current.fitBounds(bounds, 60);
     setMapVisible(true);
-  }
+  }, []);
 
-  function loadStores() {
+  const loadStores = useCallback(() => {
     getStores().then((data) => {
       _storeCache = data;
+      storesRef.current = data;
       setStores(data);
       setStoresLoaded(true);
       fitAll(data);
     }).catch(() => { setStoresLoaded(true); setMapVisible(true); });
-  }
+  }, [fitAll]);
 
   useEffect(() => {
     loadStores();
-  }, []);
+  }, [loadStores]);
 
   useEffect(() => {
-    if (mapReady) fitAll(stores);
-  }, [mapReady]);
+    if (mapReady) fitAll();
+  }, [mapReady, fitAll]);
 
   const handleLocate = () => {
     if (!navigator.geolocation) return;
